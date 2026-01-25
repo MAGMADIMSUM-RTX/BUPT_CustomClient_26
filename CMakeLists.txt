@@ -16,7 +16,8 @@ endif()
 
 # Find Qt6 components
 # Made Mqtt and Protobuf REQUIRED to ensure they are available
-find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Network Mqtt Protobuf)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Network Mqtt)
+find_package(Qt6Protobuf REQUIRED)
 
 qt_standard_project_setup()
 
