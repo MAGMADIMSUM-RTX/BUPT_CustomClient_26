@@ -23,12 +23,14 @@ void LogBridge::onPacketLog(LogLevel level, bool isSend, const QString &topic, c
     LogManager::instance().writeLog(finalLevel, LogManager::CATEGORY_MQTT, msgContent);
     
     // Sync to command line
+#ifdef ENABLE_CONSOLE_OUTPUT
     QString levelStr = "INFO";
     if (finalLevel == LogLevel::ERROR) levelStr = "ERROR";
     else if (finalLevel == LogLevel::WARN) levelStr = "WARN";
     else if (finalLevel == LogLevel::DEBUG) levelStr = "DEBUG";
     
     qInfo().noquote() << QString("[%1] [%2] %3").arg(levelStr).arg(LogManager::CATEGORY_MQTT).arg(msgContent);
+#endif
 }
 
 void LogBridge::onConnectionStateChanged(int state)
@@ -39,11 +41,15 @@ void LogBridge::onConnectionStateChanged(int state)
     else if(state == 2) stateStr = "Connected";
     
     LogManager::instance().writeLog(LogLevel::INFO, LogManager::CATEGORY_MQTT, "[Connection] State changed to: " + stateStr);
+#ifdef ENABLE_CONSOLE_OUTPUT
     qInfo() << "Connection State:" << stateStr;
+#endif
 }
 
 void LogBridge::onVideoLog(const QString &msg)
 {
     LogManager::instance().writeLog(LogLevel::INFO, LogManager::CATEGORY_VIDEO, msg);
+#ifdef ENABLE_CONSOLE_OUTPUT
     qInfo().noquote() << QString("[INFO] [%1] %2").arg(LogManager::CATEGORY_VIDEO).arg(msg);
+#endif
 }

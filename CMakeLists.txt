@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(rm_test VERSION 0.1 LANGUAGES CXX)
+project(CustomClient VERSION 0.1 LANGUAGES CXX)
 
+# --- Options ---
+option(ENABLE_CONSOLE_OUTPUT "Enable console output" ON)
+option(BUILD_USER_VERSION "Build simplified user version" OFF)
+
+# --- Standard Setup ---
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -9,69 +14,109 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Fix for "file too big" / "too many sections" error on MinGW with large generated files
-if(MINGW)
-    add_compile_options("-Wa,-mbig-obj")
-endif()
-
-# Find Qt6 components
-# Made Mqtt and Protobuf REQUIRED to ensure they are available
-find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Network Mqtt)
+# --- Dependencies ---
+find_package(Qt6 6.8 REQUIRED COMPONENTS Widgets Network Mqtt WebEngineWidgets WebChannel)
 find_package(Qt6Protobuf REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+# --- FFmpeg Configuration ---
+pkg_check_modules(FFMPEG REQUIRED libavcodec libavutil libswscale libavformat)
 
 qt_standard_project_setup()
 
+# --- Protobuf ---
 # Generate Qt Protobuf classes
 # Changed output directory to build directory to avoid polluting source tree
-qt_add_protobuf(rm_proto_lib
+qt_add_protobuf(client_proto_lib
     PROTO_FILES rm_protocol.proto
     OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated"
 )
 
-qt_add_executable(rm_test
+# --- Sources ---
+set(CORE_SOURCES
     main.cpp
-    mainwindow.cpp
-    mainwindow.h
-    rm_client.h
-    rm_client.cpp
+    rm_client.cpp rm_client.h
     types.h
-    log_manager.h
-    log_manager.cpp
-    network/rm_sender.h
-    network/rm_sender.cpp
-    network/rm_receiver.h
-    network/rm_receiver.cpp
-    ui/dashboard_widget.h
-    ui/dashboard_widget.cpp
-    ui/robot_status_widget.h
-    ui/robot_status_widget.cpp
-    ui/map_widget.h
-    ui/map_widget.cpp
-    ui/command_console_widget.h
-    ui/command_console_widget.cpp
-    ui/connection_status_widget.h
-    ui/connection_status_widget.cpp
-    log_bridge.h
-    log_bridge.cpp
-    video/video_decoder.h
-    video/video_decoder.cpp
-    video/video_widget.h
-    video/video_widget.cpp
+    log_manager.cpp log_manager.h
+    log_bridge.cpp log_bridge.h
 )
 
-target_link_libraries(rm_test PRIVATE
-    Qt6::Widgets
-    Qt6::Network
-    Qt6::Mqtt
-    Qt6::Protobuf
-    rm_proto_lib
+set(NETWORK_SOURCES
+    network/rm_sender.cpp network/rm_sender.h
+    network/rm_receiver.cpp network/rm_receiver.h
 )
+
+if(BUILD_USER_VERSION)
+    set(UI_SOURCES
+        ui/user/mainwindow.cpp ui/user/mainwindow.h
+        ui/user/web_bridge.cpp ui/user/web_bridge.h
+        ui/user/user.qrc
+    )
+else()
+    set(UI_SOURCES
+        ui/full/mainwindow.cpp ui/full/mainwindow.h
+        ui/full/dashboard_widget.cpp ui/full/dashboard_widget.h
+        ui/full/robot_status_widget.cpp ui/full/robot_status_widget.h
+        ui/full/map_widget.cpp ui/full/map_widget.h
+        ui/full/command_console_widget.cpp ui/full/command_console_widget.h
+        ui/full/connection_status_widget.cpp ui/full/connection_status_widget.h
+    )
+endif()
+
+set(VIDEO_SOURCES
+    video/video_decoder.cpp video/video_decoder.h
+    video/video_widget.cpp video/video_widget.h
+)
+
+# --- Executable ---
+qt_add_executable(CustomClient
+    ${CORE_SOURCES}
+    ${NETWORK_SOURCES}
+    ${UI_SOURCES}
+    ${VIDEO_SOURCES}
+)
+
+# --- Configuration ---
+if(ENABLE_CONSOLE_OUTPUT)
+    target_compile_definitions(CustomClient PRIVATE ENABLE_CONSOLE_OUTPUT)
+endif()
+
+if(BUILD_USER_VERSION)
+    target_compile_definitions(CustomClient PRIVATE USER_VERSION_BUILD)
+endif()
+
+if(UI_RELEASE_MODE)
+    target_compile_definitions(CustomClient PRIVATE UI_RELEASE_MODE)
+endif()
 
 # Enable fast string concatenation globally
 add_compile_definitions(QT_USE_QSTRINGBUILDER)
 
-# Precompile common Qt headers
-target_precompile_headers(rm_test PRIVATE
+# --- Linking ---
+target_link_libraries(CustomClient PRIVATE
+    Qt6::Widgets
+    Qt6::Network
+    Qt6::Mqtt
+    Qt6::Protobuf
+    Qt6::WebEngineWidgets
+    Qt6::WebChannel
+    client_proto_lib
+    ${FFMPEG_LIBRARIES}
+)
+
+target_include_directories(CustomClient PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${FFMPEG_INCLUDE_DIRS}
+)
+
+if(BUILD_USER_VERSION)
+    target_include_directories(CustomClient PRIVATE ui/user)
+else()
+    target_include_directories(CustomClient PRIVATE ui/full)
+endif()
+
+# --- Precompiled Headers ---
+target_precompile_headers(CustomClient PRIVATE
     <QMainWindow>
     <QApplication>
     <QWidget>
@@ -82,54 +127,20 @@ target_precompile_headers(rm_test PRIVATE
     <QtMqtt/QMqttClient>
 )
 
-set_target_properties(rm_test PROPERTIES 
+# --- Build Properties ---
+set_target_properties(CustomClient PROPERTIES 
     UNITY_BUILD ON
     UNITY_BUILD_BATCH_SIZE 16
 )
 
-# FFmpeg Configuration
-if(WIN32)
-    set(FFMPEG_ROOT "D:/Code/RM26/open/ffmpeg-8.0.1-full_build-shared")
-    
-    target_include_directories(rm_test PRIVATE 
-        ${FFMPEG_ROOT}/include
-    )
-    
-    target_link_directories(rm_test PRIVATE 
-        ${FFMPEG_ROOT}/lib
-    )
-    
-    target_link_libraries(rm_test PRIVATE 
-        avformat
-        avcodec
-        swscale
-        avutil
-    )
-    
-    # Copy FFmpeg DLLs to the executable directory after build
-    add_custom_command(TARGET rm_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${FFMPEG_ROOT}/bin
-        $<TARGET_FILE_DIR:rm_test>
-        COMMENT "Copying FFmpeg DLLs to output directory..."
-    )
-else()
-    # Linux Configuration
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(FFMPEG REQUIRED libavcodec libavutil libswscale libavformat)
-    
-    target_include_directories(rm_test PRIVATE ${FFMPEG_INCLUDE_DIRS})
-    target_link_libraries(rm_test PRIVATE ${FFMPEG_LIBRARIES})
-endif()
-
-# Unit Tests
+# --- Unit Tests ---
 enable_testing()
 find_package(Qt6 REQUIRED COMPONENTS Test)
 
 add_executable(unit_tests
     tests/auto_tests.cpp
-    ui/connection_status_widget.cpp
-    ui/connection_status_widget.h
+    ui/full/connection_status_widget.cpp
+    ui/full/connection_status_widget.h
     log_bridge.cpp
     log_bridge.h
     log_manager.cpp

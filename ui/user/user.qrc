@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>assets/overlay.html</file>
+        <file>assets/tailwindcss.js</file>
+        <file>assets/qwebchannel.js</file>
+    </qresource>
+</RCC>

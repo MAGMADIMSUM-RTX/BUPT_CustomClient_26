@@ -1,49 +1,90 @@
 {
     "version": "2.0.0",
     "tasks": [
+        // --- Full Version (Developer/Debug) ---
         {
-            "label": "CMake: Configure",
+            "label": "Config: Full (Debug)",
             "type": "shell",
-            "command": "C:/Qt/Tools/CMake_64/bin/cmake.exe",
+            "command": "cmake",
             "args": [
                 "-S", ".",
-                "-B", "build",
-                "-G", "Ninja",
+                "-B", "build_full",
                 "-DCMAKE_BUILD_TYPE=Debug",
-                "-DCMAKE_PREFIX_PATH=C:/Qt/6.9.1/mingw_64",
-                "-DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe",
-                "-DCMAKE_C_COMPILER=C:/Qt/Tools/mingw1310_64/bin/gcc.exe",
-                "-DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw1310_64/bin/g++.exe"
+                "-DBUILD_USER_VERSION=OFF",
+                "-DCMAKE_PREFIX_PATH=/home/user/Qt/6.10.1/gcc_64",
+                "-DQt6_DIR=/home/user/Qt/6.10.1/gcc_64/lib/cmake/Qt6"
             ],
             "group": "build",
-            "problemMatcher": []
+            "detail": "Configure Full Version (Debug)"
         },
         {
-            "label": "CMake: Build",
+            "label": "Build: Full (Debug)",
             "type": "shell",
-            "command": "C:/Qt/Tools/CMake_64/bin/cmake.exe",
+            "command": "cmake",
             "args": [
-                "--build", "build"
+                "--build", "build_full"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
             "problemMatcher": "$gcc",
-            "dependsOn": "CMake: Configure"
+            "dependsOn": "Config: Full (Debug)",
+            "detail": "Build Full Version (Debug)"
+        },
+
+        // --- User Version (Release/Simplified) ---
+        {
+            "label": "Config: User (Release)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-S", ".",
+                "-B", "build_user",
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DBUILD_USER_VERSION=ON",
+                "-DCMAKE_PREFIX_PATH=/home/user/Qt/6.10.1/gcc_64",
+                "-DQt6_DIR=/home/user/Qt/6.10.1/gcc_64/lib/cmake/Qt6"
+            ],
+            "group": "build",
+            "detail": "Configure User Version (Release)"
         },
         {
-            "label": "Run Application",
+            "label": "Build: User (Release)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "build_user"
+            ],
+            "group": "build",
+            "problemMatcher": "$gcc",
+            "dependsOn": "Config: User (Release)",
+            "detail": "Build User Version (Release)"
+        },
+
+        // --- Run Commands ---
+        {
+            "label": "Run: Full Version",
             "type": "process",
-            "command": "${workspaceFolder}/build/rm_test.exe",
-            "args": [],
+            "command": "${workspaceFolder}/build_full/CustomClient",
             "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "PATH": "C:/Qt/6.9.1/mingw_64/bin;${env:PATH}"
-                }
+                "cwd": "${workspaceFolder}"
             },
-            "dependsOn": "CMake: Build",
+            "dependsOn": "Build: Full (Debug)",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Run: User Version",
+            "type": "process",
+            "command": "${workspaceFolder}/build_user/CustomClient",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "Build: User (Release)",
             "group": "test",
             "presentation": {
                 "reveal": "always",

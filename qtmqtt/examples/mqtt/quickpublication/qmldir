@@ -1,4 +1,0 @@
-module publication
-
-prefer :/qt/qml/publication/
-Main 1.0 Main.qml

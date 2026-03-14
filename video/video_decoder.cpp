@@ -1,12 +1,47 @@
 #include "video_decoder.h"
+#include "log_manager.h"
 #include <QDebug>
 #include <QDateTime>
+#include <cstdio>
+
+extern "C" {
+#include <libavutil/log.h>
+}
+
+// FFmpeg Log Callback
+static void ffmpegLogCallback(void *ptr, int level, const char *fmt, va_list vl)
+{
+    char buffer[2048];
+    vsnprintf(buffer, sizeof(buffer), fmt, vl);
+    QString msg = QString::fromUtf8(buffer).trimmed();
+
+    if (msg.isEmpty()) return;
+
+    LogLevel logLevel = LogLevel::DEBUG;
+    if (level <= AV_LOG_FATAL || level <= AV_LOG_ERROR) logLevel = LogLevel::ERROR;
+    else if (level <= AV_LOG_WARNING) logLevel = LogLevel::WARN;
+    else if (level <= AV_LOG_INFO) logLevel = LogLevel::INFO;
+    
+    // Suppress/Downgrade spammy errors during startup
+    if (msg.contains("PPS id out of range") || 
+        msg.contains("Error parsing NAL unit") ||
+        msg.contains("Invalid data found when processing input")) {
+        logLevel = LogLevel::DEBUG; 
+    }
+
+    // Filter out FFmpeg DEBUG logs as requested
+    if (logLevel == LogLevel::DEBUG) return;
+
+    LogManager::instance().writeLog(logLevel, "FFmpeg", msg);
+}
 
 VideoDecoder::VideoDecoder(QObject *parent)
     : QThread(parent)
     , m_running(false)
     , m_port(3334)
 {
+    // Redirect FFmpeg logs to LogManager
+    av_log_set_callback(ffmpegLogCallback);
 }
 
 VideoDecoder::~VideoDecoder()

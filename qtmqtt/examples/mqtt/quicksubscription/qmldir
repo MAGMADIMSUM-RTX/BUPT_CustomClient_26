@@ -1,4 +1,0 @@
-module subscription
-
-prefer :/qt/qml/subscription/
-Main 1.0 Main.qml

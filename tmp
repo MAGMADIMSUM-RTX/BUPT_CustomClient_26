@@ -1,0 +1,8 @@
+[INFO] [Video] Received Frame #468, Size: 5119 bytes, Packets: 4, Interval: 48 ms
+[INFO] [Video] Decoder Error (Send): Invalid data found when processing input
+[hevc @ 0x7d20d00035c0] PPS id out of range: 0
+[hevc @ 0x7d20d00035c0] PPS id out of range: 0
+[hevc @ 0x7d20d00035c0] Error parsing NAL unit #0.
+[hevc @ 0x7d20d00035c0] PPS id out of range: 0
+[hevc @ 0x7d20d00035c0] PPS id out of range: 0
+[hevc @ 0x7d20d00035c0] Error parsing NAL unit #0.

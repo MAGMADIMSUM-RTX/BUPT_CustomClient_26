@@ -12,7 +12,7 @@ RMClient::RMClient(QObject *parent)
     m_receiver = new RMReceiver(this);
 
     // Server Configuration
-    m_client->setHostname(QStringLiteral("127.0.0.1"));
+    m_client->setHostname(QStringLiteral("100.100.100.21"));
     m_client->setPort(3333);
 
     connect(m_client, &QMqttClient::connected, this, &RMClient::onConnected);

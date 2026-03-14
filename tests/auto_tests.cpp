@@ -1,7 +1,7 @@
 #include <QTest>
 #include <QSignalSpy>
 #include <QLabel>
-#include "../ui/connection_status_widget.h"
+#include "../ui/full/connection_status_widget.h"
 #include "../log_bridge.h"
 #include "../log_manager.h"
 

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoboMaster HUD</title>
+    <script src="tailwindcss.js"></script>
+    <script src="qwebchannel.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Chakra Petch', sans-serif;
+        }
+        .hud-panel {
+            background: rgba(10, 14, 22, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(8px);
+        }
+        .bar-track {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            overflow: hidden;
+        }
+        .bar-fill {
+            transition: width 180ms ease-out;
+        }
+        .chip {
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyanrm: '#00e9ff',
+                        redrm: '#ff3a3a',
+                        yellowrm: '#ffc24b'
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="w-full h-screen overflow-hidden bg-transparent text-white select-none relative">
+    <div id="startup-overlay" class="absolute inset-0 z-[100] bg-black/65 backdrop-blur-sm flex items-center justify-center">
+        <div class="hud-panel rounded-xl w-[760px] max-w-[92vw] max-h-[86vh] overflow-y-auto p-5">
+            <div class="text-2xl font-semibold tracking-wider text-cyanrm">选择你的机器人ID</div>
+            <div class="text-sm text-white/70 mt-1">启动前请选择己方机器人编号，界面将按该编号识别敌我并渲染。</div>
+            <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div class="rounded-lg bg-black/35 border border-redrm/35 p-3">
+                    <div class="text-redrm font-semibold mb-2">红方</div>
+                    <div id="red-options" class="grid grid-cols-2 gap-2"></div>
+                </div>
+                <div class="rounded-lg bg-black/35 border border-cyanrm/35 p-3">
+                    <div class="text-cyanrm font-semibold mb-2">蓝方</div>
+                    <div id="blue-options" class="grid grid-cols-2 gap-2"></div>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center justify-between">
+                <div id="selected-hint" class="text-sm text-white/75">当前未选择</div>
+                <button id="confirm-id-btn" class="px-4 py-2 rounded-md bg-cyanrm text-black font-semibold disabled:opacity-40" disabled>进入界面</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="absolute top-4 left-1/2 -translate-x-1/2 z-50">
+        <div class="hud-panel rounded-lg px-4 py-2 min-w-[430px]">
+            <div class="text-center text-[11px] tracking-[0.22em] text-white/70" id="round-display">第 0 / 0 局</div>
+            <div class="flex items-center justify-center gap-6 mt-1">
+                <div class="text-right">
+                    <div class="text-[10px] text-cyanrm/80">蓝方得分</div>
+                    <div class="text-3xl font-semibold leading-none text-cyanrm" id="score-blue">0</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-[10px] text-white/70">比赛时间</div>
+                    <div class="text-2xl font-semibold leading-none tracking-wider" id="game-time">00:00</div>
+                </div>
+                <div class="text-left">
+                    <div class="text-[10px] text-redrm/80">红方得分</div>
+                    <div class="text-3xl font-semibold leading-none text-redrm" id="score-red">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="absolute top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-8">
+        <div class="hud-panel rounded-lg px-3 py-2 min-w-[220px]">
+            <div class="text-[11px] text-redrm/85 tracking-[0.15em]">敌方前哨/基地</div>
+            <div class="mt-1 flex items-center gap-3 text-sm">
+                <span class="chip">前哨: <span id="enemy-outpost-hp">--</span></span>
+                <span class="chip">基地: <span id="enemy-base-hp">--</span></span>
+            </div>
+        </div>
+        <div class="hud-panel rounded-lg px-3 py-2 min-w-[220px]">
+            <div class="text-[11px] text-cyanrm/85 tracking-[0.15em]">己方前哨/基地</div>
+            <div class="mt-1 flex items-center gap-3 text-sm">
+                <span class="chip">前哨: <span id="ally-outpost-hp">0</span></span>
+                <span class="chip">基地: <span id="ally-base-hp">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="absolute top-5 left-5 z-40 w-52">
+        <div class="hud-panel rounded-lg p-3">
+            <div class="flex items-center justify-between text-xs text-white/70">
+                <span>朝向</span>
+                <span id="yaw-text">0°</span>
+            </div>
+            <div class="mt-2 h-12 bar-track rounded-md relative">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+                <div class="absolute left-1/2 top-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-yellowrm -translate-x-1/2 -translate-y-1/2" id="yaw-arrow"></div>
+            </div>
+            <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-black/35 rounded px-2 py-1">
+                    <div class="text-white/60">坐标 X</div>
+                    <div id="pos-x" class="font-semibold">0.0</div>
+                </div>
+                <div class="bg-black/35 rounded px-2 py-1">
+                    <div class="text-white/60">坐标 Y</div>
+                    <div id="pos-y" class="font-semibold">0.0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="absolute top-5 right-5 z-40 w-64">
+        <div class="hud-panel rounded-lg p-3">
+            <div class="text-xs tracking-[0.16em] text-redrm/80 mb-2">敌方单位</div>
+            <div id="enemy-list" class="flex flex-col gap-2"></div>
+        </div>
+    </div>
+
+    <div class="absolute bottom-5 left-5 z-40 w-72 flex flex-col gap-3">
+        <div class="hud-panel rounded-lg p-3">
+            <div class="text-xs tracking-[0.16em] text-cyanrm/80 mb-2">己方单位</div>
+            <div id="ally-list" class="flex flex-col gap-2"></div>
+        </div>
+        <div class="hud-panel rounded-lg p-3" id="self-info">
+            <div class="flex items-center gap-3">
+                <div class="w-14 h-14 rounded-md border border-cyanrm/60 overflow-hidden bg-black/50">
+                    <img id="self-avatar" class="w-full h-full" src="https://api.dicebear.com/7.x/bottts/svg?seed=0&backgroundColor=00e9ff">
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                        <div id="self-role" class="text-sm font-semibold tracking-wider text-cyanrm">ROBOT</div>
+                        <div id="self-id" class="text-xs text-white/75">ID: 0</div>
+                    </div>
+                    <div class="mt-2 text-[11px] text-white/75 flex items-center justify-between">
+                        <span>血量</span>
+                        <span id="self-hp-text">0/0</span>
+                    </div>
+                    <div class="bar-track h-2 rounded-sm mt-1">
+                        <div id="self-hp-bar" class="bar-fill h-full bg-gradient-to-r from-teal-500 to-cyanrm" style="width:0%"></div>
+                    </div>
+                    <div class="mt-2 text-[11px] text-white/75 flex items-center justify-between">
+                        <span>弹药</span>
+                        <span id="self-ammo-text">0</span>
+                    </div>
+                    <div class="bar-track h-1.5 rounded-sm mt-1">
+                        <div id="self-ammo-bar" class="bar-fill h-full bg-yellowrm/90" style="width:0%"></div>
+                    </div>
+                    <div class="mt-2 text-[11px] text-white/75 flex items-center justify-between">
+                        <span>枪口热量</span>
+                        <span id="self-heat-text">0.0</span>
+                    </div>
+                    <div class="bar-track h-1.5 rounded-sm mt-1">
+                        <div id="self-heat-bar" class="bar-fill h-full bg-redrm/85" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-[520px]">
+        <div class="hud-panel rounded-lg px-4 py-2 flex items-center justify-between text-xs text-white/75">
+            <span>航向</span>
+            <span id="heading-text">N / 0°</span>
+        </div>
+    </div>
+
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-50 opacity-85">
+        <div class="relative w-9 h-9">
+            <div class="absolute left-1/2 top-0 -translate-x-1/2 h-2 w-0.5 bg-cyanrm"></div>
+            <div class="absolute left-1/2 bottom-0 -translate-x-1/2 h-2 w-0.5 bg-cyanrm"></div>
+            <div class="absolute top-1/2 left-0 -translate-y-1/2 h-0.5 w-2 bg-cyanrm"></div>
+            <div class="absolute top-1/2 right-0 -translate-y-1/2 h-0.5 w-2 bg-cyanrm"></div>
+            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-white"></div>
+        </div>
+    </div>
+
+    <script>
+        const ROBOT_LABEL = {
+            1: "红方英雄", 2: "红方工程", 3: "红方步兵3", 4: "红方步兵4", 6: "红方空中", 7: "红方哨兵", 8: "红方飞镖", 9: "红方雷达", 10: "红方前哨站", 11: "红方基地",
+            101: "蓝方英雄", 102: "蓝方工程", 103: "蓝方步兵3", 104: "蓝方步兵4", 106: "蓝方空中", 107: "蓝方哨兵", 108: "蓝方飞镖", 109: "蓝方雷达", 110: "蓝方前哨站", 111: "蓝方基地"
+        };
+        const RED_IDS = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11];
+        const BLUE_IDS = [101, 102, 103, 104, 106, 107, 108, 109, 110, 111];
+        const ROLE_SHORT = {
+            1: "英雄", 2: "工程", 3: "步兵", 4: "步兵", 6: "空中", 7: "哨兵", 8: "飞镖", 9: "雷达", 10: "前哨", 11: "基地",
+            101: "英雄", 102: "工程", 103: "步兵", 104: "步兵", 106: "空中", 107: "哨兵", 108: "飞镖", 109: "雷达", 110: "前哨", 111: "基地"
+        };
+        const MAX_AMMO_BY_ID = {
+            1: 200, 2: 100, 3: 500, 4: 500, 6: 120, 7: 700, 8: 40, 9: 0,
+            101: 200, 102: 100, 103: 500, 104: 500, 106: 120, 107: 700, 108: 40, 109: 0
+        };
+
+        let webBridge = null;
+        let selfId = 0;
+        let manualSelfId = 0;
+        let lastHpList = [];
+        let lastAmmoList = [];
+        let allyBaseHp = 0;
+        let allyOutpostHp = 0;
+
+        function clamp(v, min, max) {
+            return Math.max(min, Math.min(max, v));
+        }
+
+        function formatTime(totalSec) {
+            const sec = Math.max(0, Number(totalSec) || 0);
+            const min = Math.floor(sec / 60);
+            const rem = sec % 60;
+            return `${String(min).padStart(2, "0")}:${String(rem).padStart(2, "0")}`;
+        }
+
+        function myId() {
+            return manualSelfId || selfId || 0;
+        }
+
+        function isRedTeam(id) {
+            return id > 0 && id < 100;
+        }
+
+        function getFriendlyIds() {
+            const id = myId();
+            if (!id) return [];
+            return isRedTeam(id) ? RED_IDS.slice() : BLUE_IDS.slice();
+        }
+
+        function getEnemyIds() {
+            const id = myId();
+            if (!id) return [];
+            return isRedTeam(id) ? BLUE_IDS.slice() : RED_IDS.slice();
+        }
+
+        function pickFriendlyIdByIndex(index) {
+            const ids = getFriendlyIds();
+            if (index < ids.length) return ids[index];
+            return null;
+        }
+
+        function pickEnemyIdByIndex(index) {
+            const ids = getEnemyIds();
+            if (index < ids.length) return ids[index];
+            return null;
+        }
+
+        function normalizeNumber(v, fallback) {
+            if (v === null || v === undefined) return fallback;
+            const n = Number(v);
+            if (Number.isNaN(n)) return fallback;
+            return n;
+        }
+
+        function headingName(yaw) {
+            const y = ((yaw % 360) + 360) % 360;
+            const names = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+            const idx = Math.round(y / 45) % 8;
+            return names[idx];
+        }
+
+        function renderTop() {
+            document.getElementById("score-red").innerText = webBridge ? (webBridge.redScore || 0) : 0;
+            document.getElementById("score-blue").innerText = webBridge ? (webBridge.blueScore || 0) : 0;
+            document.getElementById("round-display").innerText = `第 ${webBridge ? (webBridge.currentRound || 0) : 0} / ${webBridge ? (webBridge.totalRounds || 0) : 0} 局`;
+            document.getElementById("game-time").innerText = formatTime(webBridge ? webBridge.gameTime : 0);
+        }
+
+        function renderTelemetry() {
+            if (!webBridge) return;
+            document.getElementById("pos-x").innerText = Number(webBridge.robotX || 0).toFixed(1);
+            document.getElementById("pos-y").innerText = Number(webBridge.robotY || 0).toFixed(1);
+            const yaw = Number(webBridge.robotYaw || 0);
+            const normalized = ((yaw % 360) + 360) % 360;
+            document.getElementById("yaw-text").innerText = `${normalized.toFixed(0)}°`;
+            document.getElementById("heading-text").innerText = `${headingName(normalized)} / ${normalized.toFixed(0)}°`;
+            document.getElementById("yaw-arrow").style.transform = `translate(-50%, -50%) rotate(${normalized}deg)`;
+        }
+
+        function renderSelf() {
+            if (!webBridge) return;
+            const idForDisplay = myId();
+            const hp = Number(webBridge.robotHp || 0);
+            const maxHp = Number(webBridge.maxHp || 100);
+            const ammo = Number(webBridge.robotAmmo || 0);
+            const heat = Number(webBridge.robotHeat || 0);
+            const role = ROLE_SHORT[idForDisplay] || "机器人";
+            const maxAmmo = normalizeNumber(MAX_AMMO_BY_ID[idForDisplay], 500);
+            const hpPercent = maxHp > 0 ? clamp((hp / maxHp) * 100, 0, 100) : 0;
+            const ammoPercent = maxAmmo > 0 ? clamp((ammo / maxAmmo) * 100, 0, 100) : 0;
+            const heatPercent = clamp((heat / 100) * 100, 0, 100);
+            const isRed = isRedTeam(idForDisplay);
+            const color = isRed ? "ff3a3a" : "00e9ff";
+
+            document.getElementById("self-role").innerText = role;
+            document.getElementById("self-id").innerText = `ID: ${idForDisplay || 0}`;
+            document.getElementById("self-hp-text").innerText = `${hp}/${maxHp}`;
+            document.getElementById("self-hp-bar").style.width = `${hpPercent}%`;
+            document.getElementById("self-ammo-text").innerText = String(ammo);
+            document.getElementById("self-ammo-bar").style.width = `${ammoPercent}%`;
+            document.getElementById("self-heat-text").innerText = heat.toFixed(1);
+            document.getElementById("self-heat-bar").style.width = `${heatPercent}%`;
+            document.getElementById("self-avatar").src = `https://api.dicebear.com/7.x/bottts/svg?seed=${idForDisplay || 0}&backgroundColor=${color}`;
+        }
+
+        function allyCard(id, hp, ammo, index) {
+            const role = ROLE_SHORT[id] || "单位";
+            const maxAmmo = normalizeNumber(MAX_AMMO_BY_ID[id], 500);
+            const hpPercent = clamp(hp, 0, 100);
+            const ammoPercent = maxAmmo > 0 ? clamp((ammo / maxAmmo) * 100, 0, 100) : 0;
+            const alive = hp > 0;
+
+            return `
+                <div class="rounded-md bg-black/35 border border-cyanrm/30 px-2 py-1.5 ${alive ? '' : 'opacity-45 grayscale'}">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-cyanrm">${role}</span>
+                        <span class="text-white/70">槽位 ${index + 1}${id ? ` / ID ${id}` : ''}</span>
+                    </div>
+                    <div class="mt-1 flex items-center justify-between text-[10px] text-white/70">
+                        <span>血量 ${hp}</span>
+                        <span>弹药 ${ammo}</span>
+                    </div>
+                    <div class="bar-track h-1.5 rounded-sm mt-1">
+                        <div class="bar-fill h-full bg-cyanrm/90" style="width:${hpPercent}%"></div>
+                    </div>
+                    <div class="bar-track h-1 rounded-sm mt-1">
+                        <div class="bar-fill h-full bg-yellowrm/85" style="width:${ammoPercent}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function enemyCard(id, hp, index) {
+            const role = ROLE_SHORT[id] || "单位";
+            const hpPercent = clamp(hp, 0, 100);
+            const alive = hp > 0;
+
+            return `
+                <div class="rounded-md bg-black/35 border border-redrm/30 px-2 py-1.5 ${alive ? '' : 'opacity-45 grayscale'}">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-redrm">${role}</span>
+                        <span class="text-white/70">槽位 ${index + 1}${id ? ` / ID ${id}` : ''}</span>
+                    </div>
+                    <div class="mt-1 text-[10px] text-white/70">血量 ${hp}</div>
+                    <div class="bar-track h-1.5 rounded-sm mt-1">
+                        <div class="bar-fill h-full bg-redrm/90" style="width:${hpPercent}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStronghold() {
+            document.getElementById("ally-base-hp").innerText = String(allyBaseHp);
+            document.getElementById("ally-outpost-hp").innerText = String(allyOutpostHp);
+
+            let enemyOutpost = "--";
+            let enemyBase = "--";
+            const n = lastAmmoList.length;
+            const enemyCount = Math.max(0, lastHpList.length - n);
+            for (let i = 0; i < enemyCount; i++) {
+                const inferredId = pickEnemyIdByIndex(i);
+                const hp = normalizeNumber(lastHpList[n + i], 0);
+                if (inferredId === 10 || inferredId === 110) enemyOutpost = String(hp);
+                if (inferredId === 11 || inferredId === 111) enemyBase = String(hp);
+            }
+            document.getElementById("enemy-outpost-hp").innerText = enemyOutpost;
+            document.getElementById("enemy-base-hp").innerText = enemyBase;
+        }
+
+        function renderLists() {
+            const allyContainer = document.getElementById("ally-list");
+            const enemyContainer = document.getElementById("enemy-list");
+            allyContainer.innerHTML = "";
+            enemyContainer.innerHTML = "";
+            if (!lastHpList || !lastHpList.length || !myId()) return;
+
+            const allyCount = lastAmmoList.length;
+            const enemyCount = Math.max(0, lastHpList.length - allyCount);
+
+            for (let i = 0; i < allyCount; i++) {
+                const id = pickFriendlyIdByIndex(i);
+                if (id === myId()) continue;
+                const hp = normalizeNumber(lastHpList[i], 0);
+                const ammo = normalizeNumber(lastAmmoList[i], 0);
+                allyContainer.insertAdjacentHTML("beforeend", allyCard(id, hp, ammo, i));
+            }
+
+            for (let j = 0; j < enemyCount; j++) {
+                const id = pickEnemyIdByIndex(j);
+                const hp = normalizeNumber(lastHpList[allyCount + j], 0);
+                enemyContainer.insertAdjacentHTML("beforeend", enemyCard(id, hp, j));
+            }
+
+            renderStronghold();
+        }
+
+        function fullRender() {
+            renderTop();
+            renderSelf();
+            renderTelemetry();
+            renderLists();
+            renderStronghold();
+        }
+
+        function optionButtonHtml(id) {
+            const name = ROBOT_LABEL[id] || `机器人 ${id}`;
+            return `<button type="button" data-id="${id}" class="id-option text-left px-2 py-1.5 rounded-md bg-black/35 border border-white/20 hover:border-cyanrm/70 hover:bg-black/55">${id} - ${name}</button>`;
+        }
+
+        function setupStartSelection() {
+            const red = document.getElementById("red-options");
+            const blue = document.getElementById("blue-options");
+            red.innerHTML = RED_IDS.map(optionButtonHtml).join("");
+            blue.innerHTML = BLUE_IDS.map(optionButtonHtml).join("");
+
+            let pending = 0;
+            const hint = document.getElementById("selected-hint");
+            const confirm = document.getElementById("confirm-id-btn");
+
+            function refreshButtons() {
+                document.querySelectorAll(".id-option").forEach((el) => {
+                    const id = Number(el.getAttribute("data-id"));
+                    if (id === pending) {
+                        el.classList.add("border-cyanrm");
+                        el.classList.remove("border-white/20");
+                    } else {
+                        el.classList.remove("border-cyanrm");
+                        el.classList.add("border-white/20");
+                    }
+                });
+            }
+
+            document.querySelectorAll(".id-option").forEach((el) => {
+                el.addEventListener("click", () => {
+                    pending = Number(el.getAttribute("data-id"));
+                    hint.innerText = `已选择：${pending} - ${ROBOT_LABEL[pending] || ""}`;
+                    confirm.disabled = false;
+                    refreshButtons();
+                });
+            });
+
+            confirm.addEventListener("click", () => {
+                if (!pending) return;
+                manualSelfId = pending;
+                document.getElementById("startup-overlay").style.display = "none";
+                fullRender();
+            });
+        }
+
+        window.onload = function() {
+            setupStartSelection();
+            new QWebChannel(qt.webChannelTransport, function(channel) {
+                webBridge = channel.objects.webBridge;
+                selfId = Number(webBridge.robotId || 0);
+                lastHpList = Array.isArray(webBridge.allRobotHp) ? webBridge.allRobotHp : [];
+                lastAmmoList = Array.isArray(webBridge.allRobotAmmo) ? webBridge.allRobotAmmo : [];
+                allyBaseHp = Number(webBridge.allyBaseHp || 0);
+                allyOutpostHp = Number(webBridge.allyOutpostHp || 0);
+
+                webBridge.gameTimeChanged.connect(renderTop);
+                webBridge.currentRoundChanged.connect(renderTop);
+                webBridge.totalRoundsChanged.connect(renderTop);
+                webBridge.redScoreChanged.connect(renderTop);
+                webBridge.blueScoreChanged.connect(renderTop);
+
+                webBridge.robotIdChanged.connect(function(id) {
+                    selfId = Number(id || 0);
+                    renderSelf();
+                    renderLists();
+                });
+                webBridge.robotHpChanged.connect(renderSelf);
+                webBridge.maxHpChanged.connect(renderSelf);
+                webBridge.robotAmmoChanged.connect(renderSelf);
+                webBridge.robotHeatChanged.connect(renderSelf);
+                webBridge.robotXChanged.connect(renderTelemetry);
+                webBridge.robotYChanged.connect(renderTelemetry);
+                webBridge.robotYawChanged.connect(renderTelemetry);
+
+                webBridge.allRobotHpChanged.connect(function(hpList) {
+                    lastHpList = hpList || [];
+                    renderLists();
+                });
+                webBridge.allRobotAmmoChanged.connect(function(ammoList) {
+                    lastAmmoList = ammoList || [];
+                    renderLists();
+                });
+                webBridge.allyBaseHpChanged.connect(function(hp) {
+                    allyBaseHp = normalizeNumber(hp, 0);
+                    renderStronghold();
+                });
+                webBridge.allyOutpostHpChanged.connect(function(hp) {
+                    allyOutpostHp = normalizeNumber(hp, 0);
+                    renderStronghold();
+                });
+
+                fullRender();
+            });
+        };
+    </script>
+</body>
+</html>
