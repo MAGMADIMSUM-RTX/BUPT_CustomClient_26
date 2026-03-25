@@ -12,7 +12,7 @@ RMClient::RMClient(QObject *parent)
     m_receiver = new RMReceiver(this);
 
     // Server Configuration
-    m_client->setHostname(QStringLiteral("100.100.100.21"));
+    m_client->setHostname(QStringLiteral("lc-win.l.l"));
     m_client->setPort(3333);
 
     connect(m_client, &QMqttClient::connected, this, &RMClient::onConnected);
@@ -90,6 +90,11 @@ void RMClient::sendRobotPerformanceSelection(u32 shooter, u32 chassis)
 void RMClient::sendHeroDeployMode(u32 mode)
 {
     m_sender->sendHeroDeployMode(mode);
+}
+
+void RMClient::sendCommonCommand(u32 type, u32 param)
+{
+    m_sender->sendCommonCommand(type, param);
 }
 
 void RMClient::sendRuneActivate(u32 activate)

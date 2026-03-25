@@ -15,5 +15,4 @@ int main(int argc, char *argv[])
     return a.exec();
 }
 
-// TODO 修改订阅和发送的 QoS ，确保信息不丢失
 // 

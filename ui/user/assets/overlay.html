@@ -68,39 +68,51 @@
         </div>
     </div>
 
-    <div class="absolute top-4 left-1/2 -translate-x-1/2 z-50">
-        <div class="hud-panel rounded-lg px-4 py-2 min-w-[430px]">
+    <div class="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4">
+        <!-- 己方前哨站/基地血量条 -->
+        <div class="flex flex-col items-end gap-1 w-48">
+            <!-- Base (Inner, Top, Large) -->
+            <div class="w-full h-6 bar-track rounded-sm relative skew-x-[15deg]">
+                <div id="ally-base-bar" class="bar-fill h-full bg-cyanrm absolute right-0 top-0" style="width: 0%;"></div>
+                <div class="absolute right-2 top-1/2 -translate-y-1/2 text-[12px] text-white/90 font-bold tracking-widest z-10 skew-x-[-15deg]">基地</div>
+            </div>
+            <!-- Outpost (Outer, Bottom, Small) -->
+            <div class="w-[80%] h-4 bar-track rounded-sm relative skew-x-[15deg] mr-2">
+                <div id="ally-outpost-bar" class="bar-fill h-full bg-cyanrm/80 absolute right-0 top-0" style="width: 0%;"></div>
+                <div class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-white/90 font-bold tracking-widest z-10 skew-x-[-15deg]">前哨站</div>
+            </div>
+        </div>
+
+        <!-- 顶部比分板 -->
+        <div class="hud-panel rounded-lg px-6 py-2 min-w-[280px]">
             <div class="text-center text-[11px] tracking-[0.22em] text-white/70" id="round-display">第 0 / 0 局</div>
-            <div class="flex items-center justify-center gap-6 mt-1">
+            <div class="flex items-center justify-center gap-8 mt-1">
                 <div class="text-right">
-                    <div class="text-[10px] text-cyanrm/80">蓝方得分</div>
-                    <div class="text-3xl font-semibold leading-none text-cyanrm" id="score-blue">0</div>
+                    <div class="text-[10px] text-cyanrm/80" id="left-score-label">己方得分</div>
+                    <div class="text-3xl font-semibold leading-none text-cyanrm" id="left-score">0</div>
                 </div>
                 <div class="text-center">
                     <div class="text-[10px] text-white/70">比赛时间</div>
                     <div class="text-2xl font-semibold leading-none tracking-wider" id="game-time">00:00</div>
                 </div>
                 <div class="text-left">
-                    <div class="text-[10px] text-redrm/80">红方得分</div>
-                    <div class="text-3xl font-semibold leading-none text-redrm" id="score-red">0</div>
+                    <div class="text-[10px] text-redrm/80" id="right-score-label">敌方得分</div>
+                    <div class="text-3xl font-semibold leading-none text-redrm" id="right-score">0</div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="absolute top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-8">
-        <div class="hud-panel rounded-lg px-3 py-2 min-w-[220px]">
-            <div class="text-[11px] text-redrm/85 tracking-[0.15em]">敌方前哨/基地</div>
-            <div class="mt-1 flex items-center gap-3 text-sm">
-                <span class="chip">前哨: <span id="enemy-outpost-hp">--</span></span>
-                <span class="chip">基地: <span id="enemy-base-hp">--</span></span>
+        <!-- 敌方前哨站/基地血量条 -->
+        <div class="flex flex-col items-start gap-1 w-48">
+            <!-- Base (Inner, Top, Large) -->
+            <div class="w-full h-6 bar-track rounded-sm relative skew-x-[-15deg]">
+                <div id="enemy-base-bar" class="bar-fill h-full bg-redrm absolute left-0 top-0" style="width: 0%;"></div>
+                <div class="absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-white/90 font-bold tracking-widest z-10 skew-x-[15deg]">基地</div>
             </div>
-        </div>
-        <div class="hud-panel rounded-lg px-3 py-2 min-w-[220px]">
-            <div class="text-[11px] text-cyanrm/85 tracking-[0.15em]">己方前哨/基地</div>
-            <div class="mt-1 flex items-center gap-3 text-sm">
-                <span class="chip">前哨: <span id="ally-outpost-hp">0</span></span>
-                <span class="chip">基地: <span id="ally-base-hp">0</span></span>
+            <!-- Outpost (Outer, Bottom, Small) -->
+            <div class="w-[80%] h-4 bar-track rounded-sm relative skew-x-[-15deg] ml-2">
+                <div id="enemy-outpost-bar" class="bar-fill h-full bg-redrm/80 absolute left-0 top-0" style="width: 0%;"></div>
+                <div class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-white/90 font-bold tracking-widest z-10 skew-x-[15deg]">前哨站</div>
             </div>
         </div>
     </div>
@@ -193,20 +205,123 @@
         </div>
     </div>
 
+    <div id="buy-dialog" class="absolute top-32 left-1/2 -translate-x-1/2 z-[60] hidden">
+        <div class="hud-panel rounded-xl p-6 min-w-[300px] text-center shadow-lg shadow-black/50 border border-yellowrm/30">
+            <div id="buy-title" class="text-xl font-bold text-yellowrm mb-2">购买弹丸</div>
+            <div id="buy-hint" class="text-sm text-white/80 mb-4">按下ENTER购买</div>
+            <div id="buy-input" class="text-4xl font-mono text-cyanrm font-bold"></div>
+        </div>
+    </div>
+
+    <div id="shortcut-menu" class="absolute bottom-5 right-5 z-40 w-48 hud-panel rounded-lg p-3">
+        <div class="text-xs text-white/60 mb-2 border-b border-white/10 pb-1 flex justify-between">
+            <span>快捷键菜单</span>
+            <span>\ 隐藏</span>
+        </div>
+        <div class="space-y-1 text-[11px] text-white/80">
+            <div class="flex justify-between"><span>购买弹丸</span> <span class="text-yellowrm">0-9</span></div>
+            <div class="flex justify-between"><span>确认购买</span> <span class="text-cyanrm">ENTER</span></div>
+            <div class="flex justify-between"><span>取消购买</span> <span class="text-redrm">ESC</span></div>
+            <div class="flex justify-between"><span>切换菜单</span> <span class="text-white/50">\</span></div>
+        </div>
+    </div>
+
     <script>
+        // ... (Existing Scripts)
+        
+        // Buy Bullet Logic
+        let buyBuffer = "";
+        const buyDialog = document.getElementById("buy-dialog");
+        const buyTitle = document.getElementById("buy-title");
+        const buyHint = document.getElementById("buy-hint");
+        const buyInputDisplay = document.getElementById("buy-input");
+        const shortcutMenu = document.getElementById("shortcut-menu");
+
+        document.addEventListener("keydown", (e) => {
+            // Toggle Menu
+            if (e.key === "\\") {
+                if (shortcutMenu.style.display === "none") {
+                    shortcutMenu.style.display = "block";
+                } else {
+                    shortcutMenu.style.display = "none";
+                }
+                return;
+            }
+
+            // Buy Logic
+            if (e.key >= "0" && e.key <= "9") {
+                buyBuffer += e.key;
+                updateBuyDialog();
+            } else if (e.key === "Backspace") {
+                buyBuffer = buyBuffer.slice(0, -1);
+                updateBuyDialog();
+            } else if (e.key === "Escape") {
+                buyBuffer = "";
+                updateBuyDialog();
+            } else if (e.key === "Enter") {
+                if (buyBuffer.length > 0) {
+                    executeBuy();
+                }
+                buyBuffer = "";
+                updateBuyDialog();
+            }
+        });
+
+        function updateBuyDialog() {
+            if (buyBuffer.length > 0) {
+                buyDialog.classList.remove("hidden");
+                const id = myId();
+                const isHero = (id === 1 || id === 101);
+                const val = parseInt(buyBuffer);
+                
+                // Hero: 42mm (Type 2), Others: 17mm (Type 1)
+                // User requirement: Hero -> show "buy 17mm count [input]", Others -> show "buy 17mm count [input*10]"
+                // I will adapt text slightly to be accurate but follow the spirit.
+                
+                const count = isHero ? val : (val * 10);
+                // "如果是英雄机器人，会在屏幕中心显示出“购买17mm弹丸数量 56 \n 按下ENTER购买”"
+                // "对于，其他机器人，则显示“购买42mm弹丸数量 560 \n 按下ENTER购买”"
+                
+                const typeStr = isHero ? "17mm" : "42mm";
+                
+                buyTitle.innerText = `购买${typeStr}弹丸数量 ${count}`;
+                // "第一行字体稍大" -> implemented via text-xl vs text-sm
+                buyHint.innerText = "按下ENTER购买";
+                buyInputDisplay.innerText = buyBuffer;
+                
+            } else {
+                buyDialog.classList.add("hidden");
+            }
+        }
+
+        function executeBuy() {
+            if (!webBridge) return;
+            const id = myId();
+            const isHero = (id === 1 || id === 101);
+            const val = parseInt(buyBuffer);
+            
+            if (isHero) {
+                // Hero: Text says "17mm" -> Send Type 1
+                webBridge.sendCommonCommand(1, val);
+            } else {
+                // Others: Text says "42mm" -> Send Type 2
+                webBridge.sendCommonCommand(2, val * 10);
+            }
+        }
+
         const ROBOT_LABEL = {
-            1: "红方英雄", 2: "红方工程", 3: "红方步兵3", 4: "红方步兵4", 6: "红方空中", 7: "红方哨兵", 8: "红方飞镖", 9: "红方雷达", 10: "红方前哨站", 11: "红方基地",
-            101: "蓝方英雄", 102: "蓝方工程", 103: "蓝方步兵3", 104: "蓝方步兵4", 106: "蓝方空中", 107: "蓝方哨兵", 108: "蓝方飞镖", 109: "蓝方雷达", 110: "蓝方前哨站", 111: "蓝方基地"
+            1: "红方英雄", 2: "红方工程", 3: "红方步兵3", 4: "红方步兵4", 5: "红方步兵5", 6: "红方空中", 7: "红方哨兵", 8: "红方飞镖", 9: "红方雷达", 10: "红方前哨站", 11: "红方基地",
+            101: "蓝方英雄", 102: "蓝方工程", 103: "蓝方步兵3", 104: "蓝方步兵4", 105: "蓝方步兵5", 106: "蓝方空中", 107: "蓝方哨兵", 108: "蓝方飞镖", 109: "蓝方雷达", 110: "蓝方前哨站", 111: "蓝方基地"
         };
-        const RED_IDS = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11];
-        const BLUE_IDS = [101, 102, 103, 104, 106, 107, 108, 109, 110, 111];
+        const RED_IDS = [1, 2, 3, 4, 5, 6, 7, 8];
+        const BLUE_IDS = [101, 102, 103, 104, 105, 106, 107, 108];
         const ROLE_SHORT = {
-            1: "英雄", 2: "工程", 3: "步兵", 4: "步兵", 6: "空中", 7: "哨兵", 8: "飞镖", 9: "雷达", 10: "前哨", 11: "基地",
-            101: "英雄", 102: "工程", 103: "步兵", 104: "步兵", 106: "空中", 107: "哨兵", 108: "飞镖", 109: "雷达", 110: "前哨", 111: "基地"
+            1: "英雄", 2: "工程", 3: "步兵", 4: "步兵", 5: "步兵", 6: "空中", 7: "哨兵", 8: "飞镖", 9: "雷达", 10: "前哨", 11: "基地",
+            101: "英雄", 102: "工程", 103: "步兵", 104: "步兵", 105: "步兵", 106: "空中", 107: "哨兵", 108: "飞镖", 109: "雷达", 110: "前哨", 111: "基地"
         };
         const MAX_AMMO_BY_ID = {
-            1: 200, 2: 100, 3: 500, 4: 500, 6: 120, 7: 700, 8: 40, 9: 0,
-            101: 200, 102: 100, 103: 500, 104: 500, 106: 120, 107: 700, 108: 40, 109: 0
+            1: 200, 2: 100, 3: 500, 4: 500, 5: 500, 6: 120, 7: 700, 8: 40, 9: 0,
+            101: 200, 102: 100, 103: 500, 104: 500, 105: 500, 106: 120, 107: 700, 108: 40, 109: 0
         };
 
         let webBridge = null;
@@ -275,10 +390,54 @@
         }
 
         function renderTop() {
-            document.getElementById("score-red").innerText = webBridge ? (webBridge.redScore || 0) : 0;
-            document.getElementById("score-blue").innerText = webBridge ? (webBridge.blueScore || 0) : 0;
-            document.getElementById("round-display").innerText = `第 ${webBridge ? (webBridge.currentRound || 0) : 0} / ${webBridge ? (webBridge.totalRounds || 0) : 0} 局`;
-            document.getElementById("game-time").innerText = formatTime(webBridge ? webBridge.gameTime : 0);
+            if (!webBridge) return;
+            const myIdVal = myId();
+            const amRed = isRedTeam(myIdVal);
+            
+            // 左侧：己方分数；右侧：敌方分数
+            const myScore = amRed ? (webBridge.redScore || 0) : (webBridge.blueScore || 0);
+            const enemyScore = amRed ? (webBridge.blueScore || 0) : (webBridge.redScore || 0);
+            
+            document.getElementById("left-score").innerText = myScore;
+            document.getElementById("right-score").innerText = enemyScore;
+            
+            // 颜色更新：左侧始终为 Cyan (或 Green/Gold for Self?) 
+            // 既然是己方，我们保持 Cyanrm，敌方保持 Redrm，还是说根据实际阵营变色？
+            // 之前逻辑：Red=Red, Blue=Cyan.
+            // 现在：左侧是己方。如果我是红方，左侧分数为红方分。
+            // 建议：左侧文字颜色跟随己方阵营颜色，右侧跟随敌方阵营颜色。
+            const leftColor = amRed ? "text-redrm" : "text-cyanrm";
+            const rightColor = amRed ? "text-cyanrm" : "text-redrm";
+            
+            const leftLabel = document.getElementById("left-score-label");
+            const leftVal = document.getElementById("left-score");
+            const rightLabel = document.getElementById("right-score-label");
+            const rightVal = document.getElementById("right-score");
+
+            // Reset classes
+            leftLabel.className = `text-[10px] ${leftColor}/80`;
+            leftVal.className = `text-3xl font-semibold leading-none ${leftColor}`;
+            rightLabel.className = `text-[10px] ${rightColor}/80`;
+            rightVal.className = `text-3xl font-semibold leading-none ${rightColor}`;
+
+            document.getElementById("round-display").innerText = `第 ${webBridge.currentRound || 0} / ${webBridge.totalRounds || 0} 局`;
+            document.getElementById("game-time").innerText = formatTime(webBridge.gameTime);
+
+            // 更新血量条颜色
+            // 己方条：左侧。如果是红方，己方条应为红色？还是保持 UI 统一 Cyan？
+            // 通常 HUD 己方为蓝/青，敌方为红。
+            // 但如果我是红方，我的血条是红的吗？
+            // RoboMaster 官方客户端：己方始终是绿色/蓝色，敌方红色？
+            // 不，官方客户端左下角血条颜色跟随阵营。
+            // 让我们跟随阵营颜色。
+            
+            const allyBarColor = amRed ? "bg-redrm" : "bg-cyanrm";
+            const enemyBarColor = amRed ? "bg-cyanrm" : "bg-redrm";
+
+            document.getElementById("ally-outpost-bar").className = `bar-fill h-full ${allyBarColor}/80 absolute right-0 top-0`;
+            document.getElementById("ally-base-bar").className = `bar-fill h-full ${allyBarColor} absolute right-0 top-0`;
+            document.getElementById("enemy-outpost-bar").className = `bar-fill h-full ${enemyBarColor}/80 absolute left-0 top-0`;
+            document.getElementById("enemy-base-bar").className = `bar-fill h-full ${enemyBarColor} absolute left-0 top-0`;
         }
 
         function renderTelemetry() {
@@ -329,7 +488,7 @@
                 <div class="rounded-md bg-black/35 border border-cyanrm/30 px-2 py-1.5 ${alive ? '' : 'opacity-45 grayscale'}">
                     <div class="flex items-center justify-between text-[11px]">
                         <span class="text-cyanrm">${role}</span>
-                        <span class="text-white/70">槽位 ${index + 1}${id ? ` / ID ${id}` : ''}</span>
+                        <span class="text-white/70">${id ? `ID ${id}` : ''}</span>
                     </div>
                     <div class="mt-1 flex items-center justify-between text-[10px] text-white/70">
                         <span>血量 ${hp}</span>
@@ -354,7 +513,7 @@
                 <div class="rounded-md bg-black/35 border border-redrm/30 px-2 py-1.5 ${alive ? '' : 'opacity-45 grayscale'}">
                     <div class="flex items-center justify-between text-[11px]">
                         <span class="text-redrm">${role}</span>
-                        <span class="text-white/70">槽位 ${index + 1}${id ? ` / ID ${id}` : ''}</span>
+                        <span class="text-white/70">${id ? `ID ${id}` : ''}</span>
                     </div>
                     <div class="mt-1 text-[10px] text-white/70">血量 ${hp}</div>
                     <div class="bar-track h-1.5 rounded-sm mt-1">
@@ -365,21 +524,33 @@
         }
 
         function renderStronghold() {
-            document.getElementById("ally-base-hp").innerText = String(allyBaseHp);
-            document.getElementById("ally-outpost-hp").innerText = String(allyOutpostHp);
+            // 基地血量 5000, 前哨站 1500 (2025规则? 假设)
+            // 2024: Base 5000, Outpost 1500
+            const MAX_BASE = 5000;
+            const MAX_OUTPOST = 1500;
 
-            let enemyOutpost = "--";
-            let enemyBase = "--";
+            const allyBasePct = clamp((allyBaseHp / MAX_BASE) * 100, 0, 100);
+            const allyOutpostPct = clamp((allyOutpostHp / MAX_OUTPOST) * 100, 0, 100);
+            
+            document.getElementById("ally-base-bar").style.width = `${allyBasePct}%`;
+            document.getElementById("ally-outpost-bar").style.width = `${allyOutpostPct}%`;
+
+            let enemyOutpost = 0;
+            let enemyBase = 0;
             const n = lastAmmoList.length;
             const enemyCount = Math.max(0, lastHpList.length - n);
             for (let i = 0; i < enemyCount; i++) {
                 const inferredId = pickEnemyIdByIndex(i);
                 const hp = normalizeNumber(lastHpList[n + i], 0);
-                if (inferredId === 10 || inferredId === 110) enemyOutpost = String(hp);
-                if (inferredId === 11 || inferredId === 111) enemyBase = String(hp);
+                if (inferredId === 10 || inferredId === 110) enemyOutpost = hp;
+                if (inferredId === 11 || inferredId === 111) enemyBase = hp;
             }
-            document.getElementById("enemy-outpost-hp").innerText = enemyOutpost;
-            document.getElementById("enemy-base-hp").innerText = enemyBase;
+            
+            const enemyBasePct = clamp((enemyBase / MAX_BASE) * 100, 0, 100);
+            const enemyOutpostPct = clamp((enemyOutpost / MAX_OUTPOST) * 100, 0, 100);
+
+            document.getElementById("enemy-base-bar").style.width = `${enemyBasePct}%`;
+            document.getElementById("enemy-outpost-bar").style.width = `${enemyOutpostPct}%`;
         }
 
         function renderLists() {

@@ -3,6 +3,8 @@
 
 #include <QObject>
 
+class RMClient;
+
 class WebBridge : public QObject
 {
     Q_OBJECT
@@ -25,7 +27,7 @@ class WebBridge : public QObject
     Q_PROPERTY(int blueScore READ blueScore NOTIFY blueScoreChanged)
 
 public:
-    explicit WebBridge(QObject *parent = nullptr);
+    explicit WebBridge(RMClient *client, QObject *parent = nullptr);
 
     int robotHp() const { return m_robotHp; }
     int maxHp() const { return m_maxHp; }
@@ -51,7 +53,13 @@ public slots:
     void updateGlobalUnitStatus(unsigned int baseHp, unsigned int outpostHp, const QList<unsigned int> &robotHp, const QList<int> &robotAmmo);
     void updateGameStatus(int round, int totalRounds, int redScore, int blueScore, int time);
 
+    // 2.2.33 AirSupportStatusSync
+    Q_INVOKABLE void sendAirSupport(int commandId);
+
+    Q_INVOKABLE void sendCommonCommand(int type, int param);
+
 signals:
+    // --- Decoupled Signals for UI Updates (Proxy from RMClient) ---
     void robotHpChanged(int hp);
     void maxHpChanged(int maxHp);
     void robotIdChanged(int id);
@@ -88,6 +96,7 @@ private:
     int m_totalRounds = 0;
     int m_redScore = 0;
     int m_blueScore = 0;
+    RMClient *m_client;
 };
 
 #endif // WEB_BRIDGE_H

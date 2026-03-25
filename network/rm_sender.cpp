@@ -151,6 +151,26 @@ void RMSender::sendHeroDeployMode(u32 mode)
     emit sigPacketLog(LogLevel::INFO, true, "HeroDeployModeEventCommand", details);
 }
 
+void RMSender::sendCommonCommand(u32 type, u32 param)
+{
+    if (m_client->state() != QMqttClient::Connected) {
+        emit sigPacketLog(LogLevel::WARN, true, "CommonCommand", "Failed: Not Connected");
+        return;
+    }
+    robo_master::CommonCommand msg;
+    msg.setCmdType(type);
+    msg.setParam(param);
+    
+    QProtobufSerializer serializer;
+    QString topic = QStringLiteral("CommonCommand");
+    m_client->publish(topic, msg.serialize(&serializer), getQoS(topic));
+    
+    QString details = "cmd_type=" % QString::number(type) %
+                      " param=" % QString::number(param);
+                      
+    emit sigPacketLog(LogLevel::INFO, true, "CommonCommand", details);
+}
+
 void RMSender::sendRuneActivate(u32 activate)
 {
     if (m_client->state() != QMqttClient::Connected) {

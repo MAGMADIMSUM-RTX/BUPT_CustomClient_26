@@ -1,6 +1,7 @@
 #include "web_bridge.h"
+#include "rm_client.h"
 
-WebBridge::WebBridge(QObject *parent) : QObject(parent)
+WebBridge::WebBridge(RMClient *client, QObject *parent) : QObject(parent), m_client(client)
 {
 }
 
@@ -96,4 +97,14 @@ void WebBridge::updateGameStatus(int round, int totalRounds, int redScore, int b
         m_gameTime = time;
         emit gameTimeChanged(time);
     }
+}
+
+void WebBridge::sendAirSupport(int commandId)
+{
+    m_client->sendAirSupport(commandId);
+}
+
+void WebBridge::sendCommonCommand(int type, int param)
+{
+    m_client->sendCommonCommand(type, param);
 }

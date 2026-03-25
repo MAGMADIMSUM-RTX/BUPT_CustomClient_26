@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_rmClient = new RMClient(this);
     m_videoDecoder = new VideoDecoder(this);
     m_logBridge = new LogBridge(this);
-    m_webBridge = new WebBridge(this);
+    m_webBridge = new WebBridge(m_rmClient, this);
 
     // Connect Video Decoder
     connect(m_videoDecoder, &VideoDecoder::frameReady, this, &MainWindow::updateVideoFrame);

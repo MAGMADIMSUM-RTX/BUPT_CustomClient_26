@@ -29,6 +29,7 @@ public:
     void sendAssemblyCommand(u32 operation, u32 difficulty);
     void sendRobotPerformanceSelection(u32 shooter, u32 chassis);
     void sendHeroDeployMode(u32 mode);
+    void sendCommonCommand(u32 type, u32 param);
     void sendRuneActivate(u32 activate);
     void sendDartCommand(u32 targetId, bool open);
     void sendGuardCtrl(u32 commandId);
